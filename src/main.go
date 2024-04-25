@@ -16,39 +16,46 @@ const (
 	DarkGreen     = "\033[1;32m"
 	ModerateGreen = "\033[0;32m"
 	LightGreen    = "\033[2;32m"
+	Reset         = "\033[0m"
 )
 
 func getCommitCountOfEachDay(commits []string) map[string]int {
 	commitsCountPerDay := make(map[string]int)
 	for _, day := range commits {
-		commitsCountPerDay[day] += 1
-
+		commitsCountPerDay[day]++
 	}
 	return commitsCountPerDay
 }
 
-func getCurrentRepo() int {
+func getCurrentRepo() {
 	cmd := exec.Command("git", "log", "--date=short", "--pretty=format:%ad")
 	cmd.Dir = "."
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("error %s", err)
-		return 0
+		return
 	}
 	logOutput := string(output)
 	logs := strings.Split(logOutput, "\n")
-	for _, log := range logs {
-		fmt.Println(log)
-	}
 	commitsPerDay := getCommitCountOfEachDay(logs)
-	fmt.Print(commitsPerDay)
-	commitCount := len(logs)
-	return commitCount
 
+	// Print table header
+	fmt.Printf("| %-12s | %-6s | %-6s |\n", "Day", "Commits", "Color")
+
+	for day, count := range commitsPerDay {
+		var color string
+		switch {
+		case count >= HIGH_THRESHOLD:
+			color = DarkGreen
+		case count >= MODERATE_THRESHOLD:
+			color = ModerateGreen
+		default:
+			color = LightGreen
+		}
+		fmt.Printf("| %-12s | %-6d | %s%s%s |\n", day, count, color, "██", Reset)
+	}
 }
+
 func main() {
-	fmt.Print(DarkGreen, "This is dark green.\n")
-	fmt.Print(ModerateGreen, "This is moderate green.\n")
-	fmt.Print(LightGreen, "This is light green.\n")
-	fmt.Println(getCurrentRepo())
+	getCurrentRepo()
 }
